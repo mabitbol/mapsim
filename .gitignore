@@ -1,0 +1,7 @@
+*.png
+*.pyc
+*.ipynb*
+analysis/
+simdata/
+old/
+planck_data/

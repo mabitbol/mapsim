@@ -14,6 +14,7 @@ from tools_glp import *
 
 from leap.lib.units.angles import *
 from leap.lib.geometry import coordinates
+from leap.lib.mapping import naive_binning
 
 class glp_sim():
 
@@ -26,19 +27,19 @@ class glp_sim():
         lat = from_degrees(-75)
         omega = from_degrees(0.5)          #rad per second
 
-        self.polarization = True
+        self.polarization = False
         hwp_hz = 1.26*pi/e
         hwp_speed = 2.*pi*hwp_hz
 
         net = 25.               #uK sqrt(s)
         fknee = 0.5             #Hz
-        alpha = 1.5
+        alpha = 1.
         beam = 8.0              #arcmins
         beam = from_degrees(beam/60.)
 
         self.cmb_on = True
         self.plmaps = True
-        idn = "pred"
+        idn = "red25a1"
         self.savedir = make_dir(idn)
         save_name = self.savedir+idn+"_nside"+str(nside)+"_days"+str(days)+\
                     "_net"+str(net)+"_fk"+str(int(fknee))
@@ -150,21 +151,34 @@ class glp_sim():
     
     def make_maps(self, nside, pointing, data, num_det):
         print "adding maps"
+        binning_func = naive_binning.add_to_hit_and_unnormalized_signal_map
         Nl = hp.nside2npix(nside)
-        pix = hp.ang2pix(nside, pointing['theta'], pointing['phi'])
-        length = len(pix)
-        dmoney = data[0] + data[1]
+        #pix = hp.ang2pix(nside, pointing['theta'], pointing['phi'])
+        #length = len(pix)
+        dmoney = (data[0] + data[1])/2.
+
+        I = np.zeros(Nl, np.double) 
+        Q = np.zeros(Nl, np.double)
+        U = np.zeros(Nl, np.double)
+        hits = np.zeros(Nl, np.uint64)
+        hits2 = np.zeros(Nl, np.uint64)
+        lat = pi/2. - pointing['theta']
+        lon = pointing['phi']
         if self.polarization:
             qdata = 0.5*dmoney*cos(4*pointing['hwp']+2*pointing['roll'])
             udata = 0.5*dmoney*sin(4*pointing['hwp']+2*pointing['roll'])
-            I = np.bincount(pix, weights=dmoney, minlength=Nl)
-            Q = np.bincount(pix, weights=qdata, minlength=Nl)
-            U = np.bincount(pix, weights=udata, minlength=Nl)
-            hits = np.bincount(pix, weights=np.ones(length)*num_det, minlength=Nl)
+            binning_func(hits, I, dmoney, lon, lat)
+            binning_func(hits2, Q, qdata, lon, lat)
+            binning_func(hits2, U, udata, lon, lat)
+            #I = np.bincount(pix, weights=dmoney, minlength=Nl)
+            #Q = np.bincount(pix, weights=qdata, minlength=Nl)
+            #U = np.bincount(pix, weights=udata, minlength=Nl)
+            #hits = np.bincount(pix, weights=np.ones(length)*num_det, minlength=Nl)
             return I, Q, U, hits
         else:
-            I = np.bincount(pix, weights=dmoney, minlength=Nl)
-            hits = np.bincount(pix, weights=np.ones(length)*num_det, minlength=Nl)
+            binning_func(hits, I, dmoney, lon, lat)
+            #I = np.bincount(pix, weights=dmoney, minlength=Nl)
+            #hits = np.bincount(pix, weights=np.ones(length)*num_det, minlength=Nl)
             return I, hits
 
     def plot_maps(self, I, Q, U, hits, idn):
