@@ -42,7 +42,7 @@ class glp_sim():
         idn = "red25a2fk05"
         self.savedir = make_dir(idn)
         save_name = self.savedir+idn+"_nside"+str(nside)+"_days"+str(days)+\
-                    "_net"+str(net)+"_fk"+str(int(fknee))
+                    "_net"+str(int(net))+"_fk"+str(int(fknee))
         ##########################################################
 
         tic = timeit.default_timer()

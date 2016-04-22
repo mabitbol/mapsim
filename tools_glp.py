@@ -21,21 +21,33 @@ def get_timing(time):
     djds = today_djd+time/(60.0*60.0*24.0)
     return djds+15019.5         #converted from time in seconds to MJD
 
-def create_cmb(nside, polon):
+def create_cmb(nside, polon, freq='0'):
     print "creating map"
-    cmbfname = "planck_data/cmb_map512.fits"
-    cmb = hp.read_map(cmbfname, field=(0,1,2))
-    cmb = hp.ud_grade(cmb, nside)
-    #cmb = hp.sphtfunc.smoothing(cmb, fwhm=beam, pol=True)
-    cmbnew = np.array(cmb)
-    norm = 10**6
-    cmbnew[0] *= norm
-    cmbnew[1] *= norm
-    cmbnew[2] *= norm
-    if polon:
-        return cmbnew
+    if freq == '0':
+        cmbfname = "planck_data/cmb_map512.fits"
+        cmb = hp.read_map(cmbfname, field=(0,1,2))
+        cmb = hp.ud_grade(cmb, nside)
+        #cmb = hp.sphtfunc.smoothing(cmb, fwhm=beam, pol=True)
+        cmbnew = np.array(cmb)
+        norm = 10**6
+        cmbnew[0] *= norm
+        cmbnew[1] *= norm
+        cmbnew[2] *= norm
+        if polon:
+            return cmbnew
+        else:
+            return cmbnew[0]
     else:
-        return cmbnew[0]
+        cmbfname = 'planck_data/ebex_'+freq+'.fits'
+        cmbT = hp.read_map(cmbfname)
+        if polon:
+            if freq != '150':
+                print "no pol maps at this frequencye"
+            Q = hp.read_map('planck_data/ebex_150Q.fits')
+            U = hp.read_map('planck_data/ebex_150U.fits')
+            return [cmbT, Q, U]
+        else:
+            return cmbT
 
 def make_dir(dir_name, name=""):
     harddir = "simdata/"

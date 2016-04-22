@@ -27,40 +27,49 @@ class glp_sim():
         nside = 512
         num_det = 2
         dt = 1/rate
+        freq = 150
+        freq = str(freq)
 
-        self.polarization = False
-        hwp_hz = 1.26*pi/e
-        hwp_speed = 2.*pi*hwp_hz
+        self.polarization = True
 
-        net = 25.               #uK sqrt(s)
-        fknee = 0.05             #Hz
+        net = 10.               #uK sqrt(s)
+        fknee = 0.             #Hz
         alpha = 2.
         beam = 8.0              #arcmins
         beam = from_arcmin(beam)
 
         self.cmb_on = True
         self.plmaps = True
-        idn = "ebextest"
+        idn = "pebex_realsimw"
+        idn += freq
         self.savedir = make_dir(idn)
-        save_name = self.savedir+idn+"_nside"+str(nside)+"_net"+str(net)+\
+        save_name = self.savedir+idn+"_nside"+str(nside)+"_net"+str(int(net))+\
                     "_fk"+str(int(fknee))
         ##########################################################
 
         tic = timeit.default_timer()
-        skymap = create_cmb(nside, self.polarization)
+        skymap = create_cmb(nside, self.polarization, freq)
         T, Q, U, hits = np.zeros((4,hp.nside2npix(nside)))
         delete_txt(self.savedir)
         
         pointing_dir = 'galaxy_cut/'
-        pointing_files = glob.glob(pointing_dir+'2012-*')
+        pointing_files = glob.glob(pointing_dir+'2012-*'+freq+'.h5')[:10]
         for i, pfile in enumerate(pointing_files):
             if self.polarization:
-                print "no pol"
-                #T += T1
-                #Q += Q1
-                #U += U1
-                #hits += hits1
-                return
+                pointing, N = self.load_pointing(pfile)
+                data, offsets = self.get_tod(nside, skymap, pointing, dt,\
+                            net, fknee, alpha)
+                mjds = get_timing(pointing['time'])
+                flags = np.ones(N)
+                hdulist = fits_writer.make_fits(N, mjds, data, pointing,\
+                            offsets, num_det, flags, net, fknee, alpha)
+                fits_writer.write_copy_fits(hdulist, save_name+str(i), self.savedir)
+                T1, Q1, U1, hits1 = self.make_maps(nside, pointing, data, num_det)
+
+                T += T1
+                Q += Q1
+                U += U1
+                hits += hits1
             else:
                 pointing, N = self.load_pointing(pfile)
                 data, offsets = self.get_tod(nside, skymap, pointing, dt,\
@@ -96,9 +105,9 @@ class glp_sim():
         roll = np.zeros(N)
         pointing['roll'] = roll
         if self.polarization:
-            # fix for polarization
-            #hwp = (hwp_speed*time)%(2*pi)   
-            pointing['hwp'] = roll
+            hwp_speed = 2.*pi*1.23
+            hwp = (hwp_speed*times)%(2*pi)   
+            pointing['hwp'] = hwp
         else:
             pointing['hwp'] = roll
         return pointing, N

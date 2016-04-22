@@ -65,14 +65,14 @@ def save_data(fname, times, lats, lons):
     
 
 def galaxy_cut():
-    pointing_dir = "ebex_pointing/"
-    galcut_dir = "galaxy_cut"
+    pointing_dir = "ebex_pointing_full/"
+    galcut_dir = "galaxy_cut_full"
     make_dir(galcut_dir)
     segments = glob.glob(pointing_dir+'segment*')
     for seg in segments:
         boards = glob.glob(seg+'/board*')
         for board in boards:
-            bolos = glob.glob(board+'/2012-*')
+            bolos = glob.glob(board+'/201*')
             for bolo in bolos:
                 data  = read_bolo_pointing(bolo)
                 times, valid, lats, lons, freq, segname, bolo_name = data
