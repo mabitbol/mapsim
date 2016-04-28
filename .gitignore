@@ -6,6 +6,8 @@ simdata/
 old/
 planck_data/
 galaxy_cut/
+galaxy_cut_hwp/
 galaxy_cut_full/
 ebex_pointing/
+ebex_pointing_hwp/
 ebex_pointing_full/

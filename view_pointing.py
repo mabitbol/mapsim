@@ -65,8 +65,8 @@ def save_data(fname, times, lats, lons):
     
 
 def galaxy_cut():
-    pointing_dir = "ebex_pointing_full/"
-    galcut_dir = "galaxy_cut_full"
+    pointing_dir = "ebex_pointing_hwp/"
+    galcut_dir = "galaxy_cut_hwp"
     make_dir(galcut_dir)
     segments = glob.glob(pointing_dir+'segment*')
     for seg in segments:

@@ -106,7 +106,7 @@ class glp_sim():
         pointing['roll'] = roll
         if self.polarization:
             hwp_speed = 2.*pi*1.23
-            hwp = (hwp_speed*times)%(2*pi)   
+            hwp = (hwp_speed*times)%(2.*pi)   
             pointing['hwp'] = hwp
         else:
             pointing['hwp'] = roll
@@ -128,7 +128,7 @@ class glp_sim():
             U = skymap[2][pix]
             alpha = 0.5*arctan2(U, Q)
             Pin = sqrt(Q**2 + U**2)/I
-            tod = I*(1 + Pin*cos(4*hwp - 2*alpha + 2*roll))
+            tod = I*(1. + Pin*cos(4.*hwp - 2.*alpha + 2.*roll))
             #same as tod = I + Qcos(4hwp+2roll) + Usin(4hwp+2roll)
         else:
             #tod = hp.get_interp_val(skymap, theta, phi)
