@@ -8,15 +8,9 @@ from pylab import pi, array
 from leap.lib.units.angles import *
 
 
-def make_fits(length, mjds, data, pointing, offsets, num_det, flags, w, fk, al):
+def make_fits(length, mjds, data, pointing, offsets, num_det, w, fk, al):
     print "making fits"
-    empt = np.zeros(length)
-    #flags = np.ones(length)
-    #randpix = random.sample(xrange(length), int(length/1000))
-    #flags[randpix] = 0
-    #flags[:int(length/4)] = 0 
-    columns = make_columns(mjds, pointing, data[0], flags)
-    columns = add_fits_columns(data[1], columns, num_det, flags)
+    columns = make_columns(mjds, pointing, data)
     primary_hdu = fits.PrimaryHDU()
     table_binary_hdu = fits.BinTableHDU.from_columns(columns)
     second = second_hdu(length, num_det, w, fk, al)
@@ -24,7 +18,7 @@ def make_fits(length, mjds, data, pointing, offsets, num_det, flags, w, fk, al):
     return fits.HDUList([primary_hdu, table_binary_hdu, second, third])
 
 
-def make_columns(time, pointing, cmb_tod, flags):
+def make_columns(time, pointing, cmb_tod):
     print "making columns"
     N = len(time)
     empt = np.zeros(N)
@@ -34,18 +28,10 @@ def make_columns(time, pointing, cmb_tod, flags):
     ra_deg = fits.Column(name="RA", format="D", array=to_degrees(pointing['phi']))
     dec_deg = fits.Column(name="DEC", format="D", array=to_degrees(pi/2-pointing['theta']))
     roll_deg = fits.Column(name="PARANGLE", format="D", array=to_degrees(pointing['roll']))
-    flag = fits.Column(name="FLAG1", format="I", array=flags.astype(int))
+    flag = fits.Column(name="FLAG1", format="I", array=pointing['valid'].astype(int))
     bolo = fits.Column(name="CH1", format="E", array=cmb_tod)
     hwp_angle = fits.Column(name="HWP", format="D", array=to_degrees(pointing['hwp']))
     columns = fits.ColDefs([times, azimuth, elev, ra_deg, dec_deg, roll_deg, flag, hwp_angle, bolo])
-    return columns
-
-    
-def add_fits_columns(tod, columns, bolo_num, flags):
-    bolo = fits.Column(name="CH%d" %(bolo_num), format="E", array=tod)
-    columns.add_col(bolo)
-    flag = fits.Column(name="FLAG%d" %(bolo_num), format="D", array=flags.astype(int))
-    columns.add_col(flag)
     return columns
 
 
@@ -62,8 +48,8 @@ def second_hdu(len_time, num_det, w, fk, al):
 
 
 def third_hdu(offsets, num_det):
-    az = offsets[0][:]
-    el = offsets[1][:]
+    az = [offsets[0]]
+    el = [offsets[1]]
     bolo_on = pl.ones(num_det)
     onoff = fits.Column(name="ONOFF", format="I", array=bolo_on.astype(int))
     azoff = fits.Column(name="AZOFF", format="E", array=az)
@@ -86,4 +72,3 @@ def write_copy_fits(hdulist, name, savedir):
     descart.close()
     return
 
-    

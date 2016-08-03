@@ -21,25 +21,25 @@ class glp_sim():
     def run(self):
         nside = 512
         num_det = 2
-        fsamp = 11. #Hz
+        fsamp = 190.7 #Hz
         dt = 1/fsamp 
-        days = 10
+        days = 100
         lat = from_degrees(-75)
         omega = from_degrees(0.5)          #rad per second
 
-        self.polarization = False
-        hwp_hz = 1.26*pi/e
+        self.polarization = True
+        hwp_hz = 1.23
         hwp_speed = 2.*pi*hwp_hz
 
-        net = 25.               #uK sqrt(s)
-        fknee = 0.05             #Hz
+        net = 100.0               #uK sqrt(s)
+        fknee = 0.             #Hz
         alpha = 2.
         beam = 8.0              #arcmins
         beam = from_degrees(beam/60.)
 
         self.cmb_on = True
         self.plmaps = True
-        idn = "red25a2fk05"
+        idn = "polsimw"
         self.savedir = make_dir(idn)
         save_name = self.savedir+idn+"_nside"+str(nside)+"_days"+str(days)+\
                     "_net"+str(int(net))+"_fk"+str(int(fknee))
@@ -48,7 +48,7 @@ class glp_sim():
         tic = timeit.default_timer()
         N_sec = 24*60*60
         N = int(N_sec / dt) 
-        skymap = create_cmb(nside, self.polarization)
+        skymap = create_cmb(nside, self.polarization, freq='150')
         T, Q, U, hits = np.zeros((4,hp.nside2npix(nside)))
         delete_txt(self.savedir)
         for i in range(days):
@@ -101,7 +101,7 @@ class glp_sim():
         lsts = time*lst_rad_per_sec
         az = omega*time
         az %= (2*pi)
-        el = np.ones(N)*from_degrees(65)
+        el = np.ones(N)*from_degrees(65.)
         ra, dec = my_hor_to_eq(az,el,lat,lsts)
         ra, dec = coordinates.eq_to_gal(ra,dec)
         hwp = (hwp_speed*time)%(2*pi)   
@@ -130,17 +130,16 @@ class glp_sim():
             I = skymap[0][pix]
             Q = skymap[1][pix]
             U = skymap[2][pix]
-            alpha = 0.5*arctan2(U, Q)
-            Pin = sqrt(Q**2 + U**2)/I
-            tod = I*(1 + Pin*cos(4*hwp - 2*alpha + 2*roll))
-            #same as tod = I + Qcos(4hwp+2roll) + Usin(4hwp+2roll)
+            #alpha = 0.5*arctan2(U, Q)
+            #Pin = sqrt(Q**2 + U**2)/I
+            #tod = I*(1 + Pin*cos(4*hwp - 2*alpha + 2*roll))
+            tod = I + Q*cos(4*hwp+2*roll) + U*sin(4*hwp+2*roll)
         else:
             #tod = hp.get_interp_val(skymap, theta, phi)
             tod = skymap[pix]
         N = len(tod)
         fft_len = int(2**(2+np.floor(np.log2(N))))
         fnoise = pink_noise.pink_noise(length=fft_len, delta_t=dt, net=net, fknee=fknee, alpha=a, show_plot=False)
-        #fnoise2 = pink_noise.pink_noise(length=fft_len, delta_t=dt, net=net, fknee=fknee, alpha=a, show_plot=False)
         x = np.random.randint(1,N/2)
         tod1 = tod + fnoise[x:N+x]
         x = np.random.randint(N/2,fft_len-N-1)
@@ -155,7 +154,7 @@ class glp_sim():
         Nl = hp.nside2npix(nside)
         #pix = hp.ang2pix(nside, pointing['theta'], pointing['phi'])
         #length = len(pix)
-        dmoney = (data[0] + data[1])/2.
+        davg = (data[0] + data[1])/2.
 
         I = np.zeros(Nl, np.double) 
         Q = np.zeros(Nl, np.double)
@@ -165,9 +164,9 @@ class glp_sim():
         lat = pi/2. - pointing['theta']
         lon = pointing['phi']
         if self.polarization:
-            qdata = 0.5*dmoney*cos(4*pointing['hwp']+2*pointing['roll'])
-            udata = 0.5*dmoney*sin(4*pointing['hwp']+2*pointing['roll'])
-            binning_func(hits, I, dmoney, lon, lat)
+            qdata = 2.0*davg*cos(4*pointing['hwp']+2*pointing['roll'])
+            udata = 2.0*davg*sin(4*pointing['hwp']+2*pointing['roll'])
+            binning_func(hits, I, davg, lon, lat)
             binning_func(hits2, Q, qdata, lon, lat)
             binning_func(hits2, U, udata, lon, lat)
             #I = np.bincount(pix, weights=dmoney, minlength=Nl)
@@ -176,7 +175,7 @@ class glp_sim():
             #hits = np.bincount(pix, weights=np.ones(length)*num_det, minlength=Nl)
             return I, Q, U, hits
         else:
-            binning_func(hits, I, dmoney, lon, lat)
+            binning_func(hits, I, davg, lon, lat)
             #I = np.bincount(pix, weights=dmoney, minlength=Nl)
             #hits = np.bincount(pix, weights=np.ones(length)*num_det, minlength=Nl)
             return I, hits
@@ -194,31 +193,30 @@ class glp_sim():
         U[mask] = hp.UNSEEN
         np.savez(idn+"in_maps", hits=hits, I=I, Q=Q, U=U)
 
-        pl.figure()
-        hp.mollview(hits, cmap=cmap, unit="counts")
-        pl.title("Hit map")
-        pl.savefig(idn+"hitmap")
-        pl.close()
-
-        pl.figure()
-        hp.mollview(I, cmap=cmap, unit="$\mu K$")
-        pl.title("T map")
-        pl.savefig(idn+"Tmap")
-        pl.close()
-
-        if self.polarization:
+        if False:
             pl.figure()
-            hp.mollview(Q, cmap=cmap, unit="$\mu K$")
-            pl.title("Q map")
-            pl.savefig(idn+"Qmap")
+            hp.mollview(hits, cmap=cmap, unit="counts")
+            pl.title("Hit map")
+            pl.savefig(idn+"hitmap")
             pl.close()
 
             pl.figure()
-            hp.mollview(U, cmap=cmap, unit="$\mu K$")
-            pl.title("U map")
-            pl.savefig(idn+"Umap")
+            hp.mollview(I, cmap=cmap, unit="$\mu K$")
+            pl.title("T map")
+            pl.savefig(idn+"Tmap")
             pl.close()
+            if self.polarization:
+                pl.figure()
+                hp.mollview(Q, cmap=cmap, unit="$\mu K$")
+                pl.title("Q map")
+                pl.savefig(idn+"Qmap")
+                pl.close()
 
+                pl.figure()
+                hp.mollview(U, cmap=cmap, unit="$\mu K$")
+                pl.title("U map")
+                pl.savefig(idn+"Umap")
+                pl.close()
         return
         
 

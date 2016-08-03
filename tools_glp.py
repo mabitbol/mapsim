@@ -50,7 +50,8 @@ def create_cmb(nside, polon, freq='0'):
             return cmbT
 
 def make_dir(dir_name, name=""):
-    harddir = "simdata/"
+    #harddir = "simdata/"
+    harddir = "/cache/mabitbol/ebex/"
     path = harddir+dir_name+"/"+name
     try:
         os.makedirs(path)
@@ -60,7 +61,8 @@ def make_dir(dir_name, name=""):
     return path
 
 def delete_txt(savedir):
-    descart_dir = "/home/mabitbol/mapmaking/simulator/"
+    #descart_dir = "/home/mabitbol/mapmaking/simulator/"
+    descart_dir = "/cache/mabitbol/ebex/"
     fname = descart_dir+savedir+"files_test.txt"
     try:
         os.remove(fname)
