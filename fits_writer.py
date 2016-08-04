@@ -9,7 +9,6 @@ from leap.lib.units.angles import *
 
 
 def make_fits(length, mjds, data, pointing, offsets, num_det, w, fk, al):
-    print "making fits"
     columns = make_columns(mjds, pointing, data)
     primary_hdu = fits.PrimaryHDU()
     table_binary_hdu = fits.BinTableHDU.from_columns(columns)
@@ -19,7 +18,6 @@ def make_fits(length, mjds, data, pointing, offsets, num_det, w, fk, al):
 
 
 def make_columns(time, pointing, cmb_tod):
-    print "making columns"
     N = len(time)
     empt = np.zeros(N)
     times = fits.Column(name="MJD", format="D", array=time)
@@ -61,14 +59,11 @@ def third_hdu(offsets, num_det):
 
 
 def write_copy_fits(hdulist, name, savedir):
-    print "saving files"
-    descart_dir = "/home/mabitbol/mapmaking/simulator/"
     descart_fname = name+".fits"
+    hdulist.writeto(descart_fname,clobber=True)
     file_fname = savedir+"files_test.txt"
-    fname = os.path.join(descart_dir, descart_fname)
-    hdulist.writeto(fname,clobber=True)
-    descart = open(os.path.join(descart_dir, file_fname), 'a+')
-    descart.write(os.path.join(descart_dir,descart_fname)+'\n')
+    descart = open(file_fname, 'a+')
+    descart.write(descart_fname+'\n')
     descart.close()
     return
 
