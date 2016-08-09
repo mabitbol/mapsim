@@ -26,10 +26,9 @@ class glp_sim():
 
     def run(self):
         #pointing_dir = 'ebex_galaxy/'
-        #pointing_dir = 'goodboloseg_galaxy/'
-        pointing_dir = 'leapcompare_galaxy/'
-        idn = "leap"
-        freq = 150
+        pointing_dir = 'goodboloseg_full/'
+        idn = "goodfull"
+        freq = 250
 
         nside = 512
         num_det = 1
@@ -147,6 +146,7 @@ class glp_sim():
         tod = data[0]['data'][valid].astype(np.double)
         mask = np.abs(tod) > 20.
         if np.sum(mask) > 1:
+            print "bad"
             good = False
         lats = data[0]['lats'][valid]
         lons = data[0]['lons'][valid]

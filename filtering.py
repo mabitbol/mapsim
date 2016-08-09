@@ -54,9 +54,9 @@ def filter_bolo(f):
 
 def run():
     #dir1 = "/cache/mabitbol/ebex/goodboloseg250/data/"
-    dir1 = "ebex_galaxy/"
+    dir1 = "leapcompare_galaxy/"
     #ffiles = glob.glob(dir1+'goodboloseg*.fits')
-    ffiles = glob.glob(dir1+'201*250.h5')
+    ffiles = glob.glob(dir1+'201*150.h5')
     Nl = hp.nside2npix(512)
     total_signal = np.zeros(Nl, np.double)
     total_weight = np.zeros(Nl, np.double)
@@ -66,9 +66,9 @@ def run():
         total_signal += filteredmap
         total_weight += weightmap
         total_hits += hitsmap
-    hp.write_map('filteredsignal.fits', total_signal)
-    hp.write_map('filteredhits.fits', total_hits)
-    hp.write_map('filteredweights.fits', total_weight)
+    hp.write_map('leap_filteredsignal.fits', total_signal)
+    hp.write_map('leap_filteredhits.fits', total_hits)
+    hp.write_map('leap_filteredweights.fits', total_weight)
 
 run()
 

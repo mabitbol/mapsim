@@ -1,11 +1,7 @@
 import numpy as np
 import healpy as hp
-import matplotlib as mpl
-mpl.use('Agg')
-import pylab as pl
 import glob
 import deepdish as dd
-from leap.lib.units.angles import *
 import os
 
 # deepdish pointing files save as list with dictionaries in them.
@@ -26,9 +22,9 @@ def read_bolo_pointing(fname):
     return times, tod, valid, lats, lons, hwps, freq, segment, bolo_name, len(times)
 
 def get_galcut(times, tod, lats, lons, valid, hwps):
-    gc = lats < from_degrees(5.)
-    gc &= lats > from_degrees(-5.)
-    #gc = np.ones(len(times), dtype='bool') 
+    #gc = lats < from_degrees(5.)
+    #gc &= lats > from_degrees(-5.)
+    gc = np.ones(len(times), dtype='bool') 
     return times[gc], tod[gc], lats[gc], lons[gc], hwps[gc], valid[gc]
 
 def save_data(fname, times, tod, lats, lons, hwps, valid):
@@ -37,10 +33,11 @@ def save_data(fname, times, tod, lats, lons, hwps, valid):
     return
 
 def galaxy_cut():
-    pointing_dir = "ebex/"
-    galcut_dir = "ebex_galaxy"
+    pointing_dir = "goodboloseg/"
+    galcut_dir = "goodboloseg_full"
     make_dir(galcut_dir)
     segments = glob.glob(pointing_dir+'segment*')
+    print segments
     for seg in segments:
         boards = glob.glob(seg+'/board*')
         for board in boards:

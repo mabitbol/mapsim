@@ -8,29 +8,45 @@ class BuildMaps():
 
     def run(self):
         fdir = '/cache/mabitbol/ebex/'
-        datadir = fdir + 'bolo250/bolos/'
+        #datadir = fdir + 'bolo250/bolos/'
+        datadir = fdir + 'goodbolosfull250/bolos/'
         bolodirs = glob.glob(datadir+'*')
         nside = 512
-        signals = np.zeros(hp.nside2npix(nside))
-        hitmap = np.zeros(hp.nside2npix(nside))
+        bad = []
+        testmap = np.zeros((3, hp.nside2npix(nside)))
+        testhitmap = np.zeros((3, hp.nside2npix(nside)))
         for bd in bolodirs:
-            os.chdir(bd)
-            destriped = hp.read_map('map.fits')
-            hits = self.gethits()
-            mask = hits > 0
-            signals[mask] += destriped[mask] * hits[mask]
-            hitmap[mask] += hits[mask]
-        hp.write_map(fdir+'signalmap.fits', signals)
-        hp.write_map(fdir+'hitmap.fits', hitmap)
-        mask = hitmap > 0 
-        totalmap = np.zeros(hp.nside2npix(nside))
-        totalmap[mask] = signals[mask] / hitmap[mask]
-        hp.write_map(fdir+'totalmap.fits', totalmap)
+            if (bd+'/map.fits') in glob.glob(bd+'/*'):
+                destriped = hp.read_map(bd+'/map.fits', field=(0,1,2), verbose=False)
+                cov = hp.read_map(bd+'/cov.fits', field=(0,1,2),verbose=False)
+                mask = destriped[0] != hp.UNSEEN
+                k=0
+                testmap[k][mask] += destriped[k][mask] / cov[k][mask]
+                testhitmap[k][mask] += 1./cov[k][mask]
+                k=1
+                testmap[k][mask] += destriped[k][mask] / cov[k][mask]
+                testhitmap[k][mask] += 1./cov[k][mask]
+                k=2
+                testmap[k][mask] += destriped[k][mask] / cov[1][mask]
+                testhitmap[k][mask] += 1./cov[1][mask]
+            else:
+                bad.append(bd)
+
+        print len(bad)
+        print len(bolodirs)
+        mask = testhitmap[0] > 0
+        coadded = np.zeros((3, hp.nside2npix(nside)))
+        for k in range(3):
+            coadded[k][mask] = testmap[k][mask] / testhitmap[k][mask]
+            coadded[k][~mask] = hp.UNSEEN
+
+        hp.write_map(datadir+'../totalmap.fits', coadded)
         return 
 
-    def gethits(self):
+
+    def gethits(self, bd):
         x = np.zeros(hp.nside2npix(512))
-        with open('map.hits') as f:
+        with open(bd+'/map.hits') as f:
             k = 0
             for line in f:
                 x[k] = int(line.split(' ')[-1].split('\n')[0])

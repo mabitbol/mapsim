@@ -8,9 +8,9 @@ from tools_glp import *
 class SingleBolo():
 
     def run(self):
-        pointing_dir = 'ebex_galaxy/'
-        #pointing_dir = 'goodboloseg_galaxy/'
-        idn = "bolo"
+        #pointing_dir = 'ebex_galaxy/'
+        pointing_dir = 'goodboloseg_full/'
+        idn = "goodbolosfull"
         freq = 250
         freq = str(freq)
         idn += freq
