@@ -1,13 +1,9 @@
 import numpy as np
-import matplotlib as mpl
-mpl.use('Agg')
-from matplotlib import cm
 import pylab as pl
 import healpy as hp
 import timeit
 import pink_noise
 import fits_writer
-import seaborn as sns
 from pylab import cos, sin, pi, e, arctan2, sqrt
 import glob
 import deepdish as dd
@@ -25,9 +21,9 @@ rate = sample_rates.bolo
 class glp_sim():
 
     def run(self):
-        #pointing_dir = 'ebex_galaxy/'
-        pointing_dir = 'goodboloseg_full/'
-        idn = "goodfull"
+        pointing_dir = 'ebex_galaxy/'
+        #pointing_dir = 'goodboloseg_full/'
+        idn = "ebex_corr"
         freq = 250
 
         nside = 512
@@ -42,24 +38,55 @@ class glp_sim():
         tic = timeit.default_timer()
         delete_txt(savedir)
         pointing_files = glob.glob(pointing_dir+'201*'+freq+'.h5')
-        ns = 0
+
+        print len(pointing_files)
+        bad = np.load('bad_bolos.npy')
+        for bolo in bad:
+            for pf in pointing_files:
+                if bolo in pf:
+                    pointing_files.remove(pf)
+        print len(pointing_files)
+
         for i, pfile in enumerate(pointing_files):
             if i % 100 == 0:
                 print i
             good, data, pointing, N = self.load_pointing(pfile)
             #good, data, pointing, N, net, fknee, alpha = self.load_pointing_noise(pfile)
             if good:
-                ns += 1
                 offsets = [0,0]
                 mjds = get_timing(pointing['time'])
                 net = 1000.e-6
                 fknee = 0.2
-                alpha = 2.0
+                alpha = 2.5
                 hdulist = fits_writer.make_fits(N, mjds, data, pointing, offsets, num_det, net, fknee, alpha)
                 fits_writer.write_copy_fits(hdulist, save_name+str(i), savedir)
         print "time ", timeit.default_timer()-tic
-        print ns, len(pointing_files)
         return
+
+    def load_pointing(self, pfile):
+        # TOD in Kelvin
+        good = True
+        data = dd.io.load(pfile)
+        valid = data[0]['valid']
+        times = data[0]['times'][valid]
+        tod = data[0]['data'][valid].astype(np.double)
+        mask = np.abs(tod) > 20.
+        if np.sum(mask) > 1:
+            good = False
+        lats = data[0]['lats'][valid]
+        lons = data[0]['lons'][valid]
+        hwps = data[0]['hwps'][valid]
+        valid = valid[valid]
+        N = len(times)
+        pointing = {}
+        pointing['time'] = times
+        pointing['theta'] = pi/2. - lats
+        pointing['phi'] = lons
+        pointing['hwp'] = hwps % (2.*pi)
+        pointing['roll'] = np.zeros(N)
+        pointing['valid'] = valid
+        return good, tod, pointing, N
+
 
     def load_pointing_noise(self, pfile):
         # TOD in Kelvin
@@ -136,31 +163,6 @@ class glp_sim():
         if alpha > 5.0:
             bad = True
         return bad, white, fknee, alpha
-
-    def load_pointing(self, pfile):
-        # TOD in Kelvin
-        good = True
-        data = dd.io.load(pfile)
-        valid = data[0]['valid']
-        times = data[0]['times'][valid]
-        tod = data[0]['data'][valid].astype(np.double)
-        mask = np.abs(tod) > 20.
-        if np.sum(mask) > 1:
-            print "bad"
-            good = False
-        lats = data[0]['lats'][valid]
-        lons = data[0]['lons'][valid]
-        hwps = data[0]['hwps'][valid]
-        valid = valid[valid]
-        N = len(times)
-        pointing = {}
-        pointing['time'] = times
-        pointing['theta'] = pi/2. - lats
-        pointing['phi'] = lons
-        pointing['hwp'] = hwps % (2.*pi)
-        pointing['roll'] = np.zeros(N)
-        pointing['valid'] = valid
-        return good, tod, pointing, N
 
     def round_valid(self, valid):
         olen = 400

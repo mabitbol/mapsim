@@ -1,9 +1,11 @@
 import numpy as np
 import timeit
 import fits_writer
+import pink_noise
 import glob
 import deepdish as dd
 from tools_glp import *
+from pylab import cos, sin, pi, e, arctan2, sqrt
 
 class SingleBolo():
 
@@ -29,6 +31,8 @@ class SingleBolo():
         for f in pointing_files:
             bolo_list.append(f.split('_')[2])
         bolo_list = list(set(bolo_list))
+
+        skymap = create_cmb(nside, True, freq)
         for bolo in bolo_list:
             bfiles = [f for f in pointing_files if bolo in f]
             if len(bfiles) == 0:
@@ -40,6 +44,9 @@ class SingleBolo():
             for bf in bfiles:
                 bolosegname = bolodatadir+bf.split('/')[-1].split('.')[0]
                 data, pointing, N = self.load_pointing(bf)
+
+                data, offsets = self.get_tod(nside, skymap, pointing, dt, net, fknee, alpha)
+
                 offsets = [0,0]
                 mjds = get_timing(pointing['time'])
                 hdulist = fits_writer.make_fits(N, mjds, data, pointing, offsets, num_det, net, fknee, alpha)
@@ -67,6 +74,25 @@ class SingleBolo():
         pointing['valid'] = valid
         return tod, pointing, N
 
+    def get_tod(self, nside, skymap, pointing, dt, net, fknee, a):
+        print "calculating tod and noise"
+        theta = pointing['theta']
+        phi = pointing['phi']
+        roll = pointing['roll']
+        hwp = pointing['hwp']
+        pix = hp.ang2pix(nside, theta, phi)
+        I = skymap[0][pix]
+        Q = skymap[1][pix]
+        U = skymap[2][pix]
+        tod = I + Q*cos(hwp) + U*sin(hwp)
+
+        N = len(tod)
+        fft_len = int(2**(2+np.floor(np.log2(N))))
+        fnoise = pink_noise.pink_noise(length=fft_len, delta_t=dt, net=net, fknee=fknee, alpha=a, show_plot=False)
+        x = np.random.randint(1,N/2)
+        tod1 = tod + fnoise[x:N+x]
+        offsets = [0,0]
+        return tod1, offsets
 
 if __name__ == "__main__":
     write = SingleBolo()

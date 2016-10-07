@@ -7,8 +7,7 @@ class RunDescart():
 
     def run(self):
         fdir = '/cache/mabitbol/ebex/'
-        #datadir = fdir + 'bolo250/bolos/'
-        datadir = fdir + 'goodbolosfull250/bolos/'
+        datadir = fdir + 'ebexgalbolos250/bolos/'
         bolodirs = glob.glob(datadir+'*')
         copyscript = fdir + 'copy_destriper'
         descart = './pcart'
@@ -17,7 +16,7 @@ class RunDescart():
             sb.check_call([copyscript, bd])
         for bd in bolodirs:
             os.chdir(bd)
-            sb.call(['mpirun', '-np', '8', descart, params])
+            sb.call(['mpirun', '-np', '4', descart, params])
         return 
 
 
