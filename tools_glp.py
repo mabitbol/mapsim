@@ -39,15 +39,17 @@ def create_cmb(nside, polon, freq='0'):
             return cmbnew[0]
     else:
         cmbfname = 'planck_data/ebex_'+freq+'.fits'
-        cmbT = hp.read_map(cmbfname)
+        T = hp.read_map(cmbfname)
         if polon:
-            if freq != '150':
-                print "no pol maps at this frequencye"
-            Q = hp.read_map('planck_data/ebex_150Q.fits')
-            U = hp.read_map('planck_data/ebex_150U.fits')
-            return [cmbT, Q, U]
+            if freq == '150':
+                Q = hp.read_map('planck_data/ebex_150Q.fits')
+                U = hp.read_map('planck_data/ebex_150U.fits')
+            if freq == '250':
+                Q = hp.read_map('planck_data/ebex_250Q.fits')
+                U = hp.read_map('planck_data/ebex_250U.fits')
+            return [T, Q, U]
         else:
-            return cmbT
+            return T
 
 def make_dir(dir_name, name=""):
     harddir = "/cache/mabitbol/ebex/"

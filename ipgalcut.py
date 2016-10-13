@@ -26,7 +26,7 @@ def read_bolo_pointing(fname):
 def get_galcut(times, tod, lats, lons, valid, hwps, calib, ip):
     gc = lats < 5.*np.pi/180.
     gc &= lats > -5.*np.pi/180.
-    gc = np.ones(len(times), dtype='bool') 
+    #gc = np.ones(len(times), dtype='bool') 
     return times[gc], tod[gc], lats[gc], lons[gc], hwps[gc], valid[gc], calib[gc], ip[gc]
 
 def save_data(fname, times, tod, lats, lons, hwps, valid, calib, ip):
