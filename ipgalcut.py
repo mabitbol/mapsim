@@ -3,6 +3,7 @@ import healpy as hp
 import glob
 import deepdish as dd
 import os
+from leap.lib.geometry.coordinates import angular_distance
 
 # deepdish pointing files save as list with dictionaries in them.
 # should change this to use h5py asap
@@ -24,9 +25,9 @@ def read_bolo_pointing(fname):
     return times, tod, valid, lats, lons, hwps, calib, ip, freq, segment, bolo_name, len(times)
 
 def get_galcut(times, tod, lats, lons, valid, hwps, calib, ip):
-    gc = lats < 5.*np.pi/180.
-    gc &= lats > -5.*np.pi/180.
-    #gc = np.ones(len(times), dtype='bool') 
+    sun_lats, sun_lons = get_sun_bl(times)
+    dist = angular_distance(sun_lats, sun_lons, lats, lons)
+    gc = dist > (np.pi/4)
     return times[gc], tod[gc], lats[gc], lons[gc], hwps[gc], valid[gc], calib[gc], ip[gc]
 
 def save_data(fname, times, tod, lats, lons, hwps, valid, calib, ip):
@@ -35,8 +36,8 @@ def save_data(fname, times, tod, lats, lons, hwps, valid, calib, ip):
     return
 
 def galaxy_cut():
-    pointing_dir = "ebex250ip/"
-    galcut_dir = "ebex250gal"
+    pointing_dir = "ebex250ipraw/"
+    galcut_dir = "ebex250suncut"
     make_dir(galcut_dir)
     segments = glob.glob(pointing_dir+'segment*')
     for seg in segments:
@@ -64,6 +65,18 @@ def make_dir(dir_name, name=""):
         if not os.path.isdir(path):
             raise
     return path
+
+def get_sun_bl(times):
+    a = 5.2467176609e-15
+    b = -1.41356413129e-05
+    c = 9520.70604379
+    lons = a*times*times + b*times + c
+
+    a1 = 1.50793236866e-15
+    b1 = -4.27070840547e-06
+    c1 = 3018.41141079
+    lats = a1*times*times + b1*times + c1
+    return lats, lons
 
 
 galaxy_cut()

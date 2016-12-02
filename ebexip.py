@@ -21,9 +21,9 @@ rate = sample_rates.bolo
 class glp_sim():
 
     def run(self):
-        pointing_dir = 'ebex250sgal/'
-        idn = "ebexipms"
-        freq = 250
+        pointing_dir = 'ebex_all_prep/'
+        idn = "ebex_update"
+        freq = 150
 
         nside = 512
         num_det = 1
@@ -51,7 +51,7 @@ class glp_sim():
             if good:
                 offsets = [0,0]
                 mjds = get_timing(pointing['time'])
-                net = 1000.e-6
+                net = 500.e-6
                 fknee = 0.2
                 alpha = 2.5
                 hdulist = fits_writer.make_fits(N, mjds, data, pointing, offsets, num_det, net, fknee, alpha)
@@ -66,10 +66,10 @@ class glp_sim():
         valid = data[0]['valid']
         times = data[0]['times'][valid]
         tod = data[0]['data'][valid].astype(np.double)
-        calib = data[0]['calib'][valid]
-        tod *= calib
-        ip = data[0]['ip'][valid]
-        tod -= ip
+        #calib = data[0]['calib'][valid]
+        #tod *= calib
+        #ip = data[0]['ip'][valid]
+        #tod -= ip
         tod -= np.mean(tod)
 
         mask = np.abs(tod) > 20.

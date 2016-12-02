@@ -8,9 +8,8 @@ from tools_glp import *
 class SingleBolo():
 
     def run(self):
-        pointing_dir = 'ebex_galaxy/'
-        #pointing_dir = 'goodboloseg_full/'
-        idn = "ebexgalbolos"
+        pointing_dir = 'ebex250suncut/'
+        idn = "ebexraw"
         freq = 250
         freq = str(freq)
         idn += freq
@@ -19,31 +18,46 @@ class SingleBolo():
         num_det = 1
         net = 1000.e-6
         fknee = 0.2
-        alpha = 2.0
+        alpha = 2.2
 
         savedir = make_dir(idn)
-        datadir = make_dir_path(savedir, 'bolos')
+        datadir = make_dir_path(savedir, 'bolo_segments')
         tic = timeit.default_timer()
         pointing_files = glob.glob(pointing_dir+'201*'+freq+'.h5')
+
+        bad = np.load('bad_bolos.npy')
+        for bolo in bad:
+            for pf in pointing_files:
+                if bolo in pf:
+                    pointing_files.remove(pf)
+
         bolo_list = []
+        segment_list = []
         for f in pointing_files:
-            bolo_list.append(f.split('_')[2])
+            segbolo_str = f.split('/')[-1].split('_')
+            segment_list.append(segbolo_str[0])
+            bolo_list.append(segbolo_str[1])
+        segment_list = list(set(segment_list))
         bolo_list = list(set(bolo_list))
-        for bolo in bolo_list:
+        for k, bolo in enumerate(bolo_list):
+            if k % 10 == 0:
+                print k
             bfiles = [f for f in pointing_files if bolo in f]
-            if len(bfiles) == 0:
-                break
-            bolodir = make_dir_path(datadir, bolo)
-            bolodatadir = make_dir_path(bolodir, 'data')
-            offsetdir = make_dir_path(bolodir, 'offsets')
-            delete_txt(bolodir)
-            for bf in bfiles:
-                bolosegname = bolodatadir+bf.split('/')[-1].split('.')[0]
-                data, pointing, N = self.load_pointing(bf)
-                offsets = [0,0]
-                mjds = get_timing(pointing['time'])
-                hdulist = fits_writer.make_fits(N, mjds, data, pointing, offsets, num_det, net, fknee, alpha)
-                fits_writer.write_copy_fits(hdulist, bolosegname, bolodir)
+            for segment in segment_list:
+                boloseg_files = [f for f in bfiles if segment in f]
+                if len(boloseg_files) > 0:
+                    boloseg_name = segment + '_' + bolo
+                    boloseg_dir = make_dir_path(datadir, boloseg_name)
+                    bolodatadir = make_dir_path(boloseg_dir, 'data')
+                    offsetdir = make_dir_path(boloseg_dir, 'offsets')
+                    delete_txt(boloseg_dir)
+                    for boloseg in boloseg_files:
+                        boloseg_filename = bolodatadir+boloseg.split('/')[-1].split('.')[0]
+                        data, pointing, N = self.load_pointing(boloseg)
+                        offsets = [0,0]
+                        mjds = get_timing(pointing['time'])
+                        hdulist = fits_writer.make_fits(N, mjds, data, pointing, offsets, num_det, net, fknee, alpha)
+                        fits_writer.write_copy_fits(hdulist, boloseg_filename, boloseg_dir)
         print "time ", timeit.default_timer()-tic
         return
 
@@ -53,6 +67,8 @@ class SingleBolo():
         valid = data[0]['valid']
         times = data[0]['times'][valid]
         tod = data[0]['data'][valid].astype(np.double)
+        tod -= np.mean(tod)
+
         lats = data[0]['lats'][valid]
         lons = data[0]['lons'][valid]
         hwps = data[0]['hwps'][valid]
