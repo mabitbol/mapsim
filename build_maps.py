@@ -8,8 +8,7 @@ class BuildMaps():
 
     def run(self):
         fdir = '/cache/mabitbol/ebex/'
-        #datadir = fdir + 'bolo250/bolos/'
-        datadir = fdir + 'goodbolosfull250/bolos/'
+        datadir = fdir + 'ebexbolos250/bolo_segments/'
         bolodirs = glob.glob(datadir+'*')
         nside = 512
         bad = []
@@ -41,6 +40,8 @@ class BuildMaps():
             coadded[k][~mask] = hp.UNSEEN
 
         hp.write_map(datadir+'../totalmap.fits', coadded)
+        hp.write_map(datadir+'../covmap.fits', testhitmap)
+        hp.write_map(datadir+'../rawmap.fits', testmap)
         return 
 
 

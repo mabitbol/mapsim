@@ -7,7 +7,7 @@ class RunDescart():
 
     def run(self):
         fdir = '/cache/mabitbol/ebex/'
-        datadir = fdir + 'ebexraw250/bolo_segments/'
+        datadir = fdir + 'ebexbolos250/bolo_segments/'
         bolodirs = glob.glob(datadir+'*')
         copyscript = fdir + 'copy_destriper'
         descart = './pcart'
@@ -16,9 +16,21 @@ class RunDescart():
             sb.check_call([copyscript, bd])
         for bd in bolodirs:
             os.chdir(bd)
-            #sb.call(['mpirun', '-np', '4', descart, params])
-            sb.call([descart, params])
+            nfiles = len(glob.glob('data/*.fits'))
+            nproc = self.calc_nproc(nfiles)
+            if nproc:
+                sb.call(['mpirun', '-np', nproc, descart, params])
+            else:
+                sb.call([descart, params])
         return 
+
+    def calc_nproc(self, nfiles):
+        if nfiles < 2:
+            return '0'
+        if nfiles < 25:
+            return str(int(nfiles/2) * 2)
+        else:
+            return '24'
 
 
 if __name__ == "__main__":

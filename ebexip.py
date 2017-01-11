@@ -18,12 +18,12 @@ from leap.resources.constants import sample_rates
 from simple_fitter import psd_fit_errors
 rate = sample_rates.bolo
 
-class glp_sim():
+class EbexData():
 
     def run(self):
         pointing_dir = 'ebex_all_prep/'
         idn = "ebex_update"
-        freq = 150
+        freq = 410
 
         nside = 512
         num_det = 1
@@ -51,9 +51,9 @@ class glp_sim():
             if good:
                 offsets = [0,0]
                 mjds = get_timing(pointing['time'])
-                net = 500.e-6
+                net = 15000.e-6
                 fknee = 0.2
-                alpha = 2.5
+                alpha = 2.0
                 hdulist = fits_writer.make_fits(N, mjds, data, pointing, offsets, num_det, net, fknee, alpha)
                 fits_writer.write_copy_fits(hdulist, save_name+str(i), savedir)
         print "time ", timeit.default_timer()-tic
@@ -72,7 +72,7 @@ class glp_sim():
         #tod -= ip
         tod -= np.mean(tod)
 
-        mask = np.abs(tod) > 20.
+        mask = np.abs(tod) > 2000.
         if np.sum(mask) > 1:
             good = False
 
@@ -92,7 +92,7 @@ class glp_sim():
 
 
 if __name__ == "__main__":
-    simulation = glp_sim()
+    simulation = EbexData()
     simulation.run()
 
 

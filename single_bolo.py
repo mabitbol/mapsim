@@ -8,8 +8,8 @@ from tools_glp import *
 class SingleBolo():
 
     def run(self):
-        pointing_dir = 'ebex250suncut/'
-        idn = "ebexraw"
+        pointing_dir = 'ebex_all_prep/'
+        idn = "ebexbolos"
         freq = 250
         freq = str(freq)
         idn += freq
@@ -43,21 +43,20 @@ class SingleBolo():
             if k % 10 == 0:
                 print k
             bfiles = [f for f in pointing_files if bolo in f]
+            bolo_dir = make_dir_path(datadir, bolo)
+            bolodatadir = make_dir_path(bolo_dir, 'data')
+            offsetdir = make_dir_path(bolo_dir, 'offsets')
+            delete_txt(bolo_dir)
             for segment in segment_list:
                 boloseg_files = [f for f in bfiles if segment in f]
                 if len(boloseg_files) > 0:
-                    boloseg_name = segment + '_' + bolo
-                    boloseg_dir = make_dir_path(datadir, boloseg_name)
-                    bolodatadir = make_dir_path(boloseg_dir, 'data')
-                    offsetdir = make_dir_path(boloseg_dir, 'offsets')
-                    delete_txt(boloseg_dir)
                     for boloseg in boloseg_files:
                         boloseg_filename = bolodatadir+boloseg.split('/')[-1].split('.')[0]
                         data, pointing, N = self.load_pointing(boloseg)
                         offsets = [0,0]
                         mjds = get_timing(pointing['time'])
                         hdulist = fits_writer.make_fits(N, mjds, data, pointing, offsets, num_det, net, fknee, alpha)
-                        fits_writer.write_copy_fits(hdulist, boloseg_filename, boloseg_dir)
+                        fits_writer.write_copy_fits(hdulist, boloseg_filename, bolo_dir)
         print "time ", timeit.default_timer()-tic
         return
 
